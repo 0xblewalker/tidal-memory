@@ -1,0 +1,12 @@
+*.db
+*.db-*
+*.sqlite*
+__pycache__/
+*.py[cod]
+.venv/
+dist/
+build/
+*.egg-info/
+.env
+.env.*
+
