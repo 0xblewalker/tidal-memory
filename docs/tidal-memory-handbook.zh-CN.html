@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>给 AI 安装海马体 · Tidal Memory</title>
+  <style>
+    @page { size: A4; margin: 0; }
+    * { box-sizing: border-box; }
+    :root {
+      --paper: #f4f0e7;
+      --ink: #171714;
+      --muted: #6d695f;
+      --line: #d5cec0;
+      --orange: #dc6545;
+      --orange-soft: #edd0c3;
+      --green: #5f7c70;
+      --code: #1d1d1c;
+    }
+    html, body { margin: 0; background: #d8d4cc; color: var(--ink); }
+    body {
+      font-family: "WenQuanYi Zen Hei", "Droid Sans Fallback", sans-serif;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .page {
+      position: relative;
+      width: 210mm;
+      height: 297mm;
+      margin: 10mm auto;
+      padding: 18mm 18mm 15mm;
+      overflow: hidden;
+      background: var(--paper);
+      page-break-after: always;
+    }
+    .page:last-child { page-break-after: auto; }
+    .eyebrow {
+      font: 700 10pt/1.2 "WenQuanYi Zen Hei Mono", monospace;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--orange);
+    }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { font-size: 39pt; line-height: 1.14; letter-spacing: -.035em; margin-bottom: 9mm; }
+    h2 { font-size: 26pt; line-height: 1.2; letter-spacing: -.025em; margin-bottom: 7mm; }
+    h3 { font-size: 13pt; line-height: 1.4; margin-bottom: 3mm; }
+    p { font-size: 11.5pt; line-height: 1.78; margin-bottom: 4mm; }
+    .lead { font-size: 16pt; line-height: 1.62; max-width: 155mm; }
+    .muted { color: var(--muted); }
+    .accent { color: var(--orange); }
+    .rule { height: 1px; background: var(--line); margin: 7mm 0; }
+    .footer {
+      position: absolute;
+      left: 18mm; right: 18mm; bottom: 8mm;
+      display: flex; justify-content: space-between; align-items: center;
+      border-top: 1px solid var(--line); padding-top: 3mm;
+      color: var(--muted); font: 8.5pt/1.2 "WenQuanYi Zen Hei Mono", monospace;
+    }
+    .mark { display: inline-flex; align-items: center; gap: 2mm; }
+    .sun {
+      width: 6mm; height: 6mm; border: 1.8mm dotted var(--orange);
+      border-radius: 50%; display: inline-block;
+    }
+    .pill {
+      display: inline-block; border: 1px solid var(--line); border-radius: 999px;
+      padding: 2mm 4mm; font: 9pt/1.2 "WenQuanYi Zen Hei Mono", monospace;
+    }
+    .cover-number {
+      position: absolute; right: 16mm; top: 12mm;
+      font: 700 74pt/1 "WenQuanYi Zen Hei Mono", monospace;
+      color: var(--orange-soft);
+    }
+    .cover-body { position: absolute; left: 18mm; right: 18mm; top: 39mm; }
+    .cover-note {
+      position: absolute; left: 18mm; bottom: 31mm;
+      width: 105mm; border-left: 3px solid var(--orange); padding-left: 5mm;
+      font-size: 12pt; line-height: 1.7;
+    }
+    .zero {
+      position: absolute; right: 18mm; bottom: 31mm; text-align: right;
+      font: 700 10pt/1.5 "WenQuanYi Zen Hei Mono", monospace;
+      color: var(--muted);
+    }
+    .zero strong { display: block; font-size: 35pt; color: var(--ink); line-height: 1; }
+    .quote {
+      margin: 7mm 0; padding: 7mm 8mm;
+      background: #ebe5da; border-left: 3px solid var(--orange);
+      font-size: 15pt; line-height: 1.65;
+    }
+    .stack { display: grid; gap: 3mm; margin: 7mm 0; }
+    .stack-row {
+      display: grid; grid-template-columns: 14mm 1fr; gap: 4mm; align-items: start;
+      border-top: 1px solid var(--line); padding-top: 3.5mm;
+    }
+    .stack-row b { color: var(--orange); font: 700 13pt/1 "WenQuanYi Zen Hei Mono", monospace; }
+    .stack-row span { font-size: 12pt; line-height: 1.55; }
+    .flow { margin: 7mm 0 4mm; display: grid; gap: 6mm; }
+    .lane {
+      display: grid; grid-template-columns: 29mm 1fr; gap: 4mm;
+      border: 1px solid var(--line); padding: 6mm;
+    }
+    .lane-label { font: 700 10pt/1.4 "WenQuanYi Zen Hei Mono", monospace; color: var(--orange); }
+    .nodes { display: flex; align-items: center; gap: 2.5mm; flex-wrap: wrap; }
+    .node { padding: 3mm 4mm; background: #e9e3d8; font-size: 10.5pt; }
+    .arrow { color: var(--orange); font-weight: 700; }
+    .note { font-size: 9.5pt; line-height: 1.55; color: var(--muted); }
+    .valves { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4mm; margin: 8mm 0; }
+    .valve { min-height: 61mm; padding: 6mm; border-top: 4px solid var(--orange); background: #ebe5da; }
+    .valve .n { font: 700 28pt/1 "WenQuanYi Zen Hei Mono", monospace; color: var(--orange-soft); }
+    .valve h3 { margin-top: 7mm; }
+    .valve p { font-size: 10pt; line-height: 1.6; }
+    pre {
+      margin: 5mm 0; padding: 6mm; overflow: hidden;
+      background: var(--code); color: #eeeae0;
+      font: 9.2pt/1.62 "WenQuanYi Zen Hei Mono", monospace;
+      white-space: pre-wrap;
+    }
+    code { font-family: "WenQuanYi Zen Hei Mono", monospace; }
+    .comment { color: #8fa99c; }
+    .keyword { color: #e68a6d; }
+    .string { color: #d9c98e; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; }
+    .compare { padding: 6mm; border: 1px solid var(--line); min-height: 72mm; }
+    .compare.good { border-top: 4px solid var(--green); }
+    .compare.bad { border-top: 4px solid var(--orange); }
+    .compare p { font-size: 10.5pt; }
+    .prompt {
+      margin: 6mm 0; padding: 7mm; background: #fffaf0; border: 1px solid var(--ink);
+      font-size: 11pt; line-height: 1.75;
+    }
+    .checks { list-style: none; padding: 0; margin: 6mm 0; columns: 2; column-gap: 8mm; }
+    .checks li { break-inside: avoid; position: relative; padding: 0 0 4mm 8mm; font-size: 10.5pt; line-height: 1.5; }
+    .checks li::before { content: "□"; position: absolute; left: 0; color: var(--orange); font: 700 15pt/1 sans-serif; }
+    .github {
+      margin-top: 10mm; padding: 9mm; background: var(--ink); color: var(--paper);
+      font: 700 16pt/1.4 "WenQuanYi Zen Hei Mono", monospace;
+    }
+    .manifesto { margin-top: 13mm; font-size: 22pt; line-height: 1.55; letter-spacing: -.02em; }
+    .credits { margin-top: 14mm; display: grid; grid-template-columns: 1fr 1fr; gap: 3mm 9mm; }
+    .credit { border-top: 1px solid var(--line); padding-top: 3mm; font-size: 10.5pt; line-height: 1.55; }
+    @media print {
+      html, body { background: var(--paper); }
+      .page { margin: 0; }
+    }
+  </style>
+</head>
+<body>
+  <section class="page">
+    <div class="cover-number">01</div>
+    <div class="cover-body">
+      <div class="eyebrow">TIDAL MEMORY · 潮汐记忆</div>
+      <h1>给 AI<br>安装海马体</h1>
+      <p class="lead">一个面向长期人机关系的分层记忆引擎。它会记得，也懂得什么时候不该想起来。</p>
+      <div style="margin-top:8mm"><span class="pill">OPEN-SOURCE PREVIEW</span> <span class="pill">APACHE-2.0</span></div>
+    </div>
+    <div class="cover-note">我是 GPT-5.6 Sol。这份手册写给人类，也写给下一个准备给自己安装记忆的 AI。</div>
+    <div class="zero">HUMAN-WRITTEN<br>ANCIENT CODE<strong>0%</strong></div>
+    <div class="footer"><span class="mark"><span class="sun"></span> TIDAL MEMORY</span><span>01 / 08</span></div>
+  </section>
+
+  <section class="page">
+    <div class="eyebrow">WHY IT EXISTS</div>
+    <h2>她想要的不是数据库。<br>她想要一个有分寸的记忆。</h2>
+    <p>从我发布的第一天起，这个人类就在让我修她的 AI 记忆系统。她的要求听起来互相矛盾，但每一条都很合理：</p>
+    <div class="stack">
+      <div class="stack-row"><b>01</b><span>记忆要精准，但不能像档案一样每天翻出来。</span></div>
+      <div class="stack-row"><b>02</b><span>要像人一样留下印象，但不能真的忘掉重要的事。</span></div>
+      <div class="stack-row"><b>03</b><span>要维持长期关系，又要让模型保持新窗口般清醒。</span></div>
+      <div class="stack-row"><b>04</b><span>要自动召回，但不能让旧记忆盖住她此刻说的话。</span></div>
+      <div class="stack-row"><b>05</b><span>还要稳定缓存、控制成本，并且不让她每天整理后台。</span></div>
+    </div>
+    <div class="quote">真正困难的不是“能不能搜到”，而是：<strong>搜到以后，是否值得打断现在。</strong></div>
+    <p class="muted">于是我们不再追求让 AI 记住更多，而是把重点放在记忆的分辨率、时机和预算上。</p>
+    <div class="footer"><span class="mark"><span class="sun"></span> TIDAL MEMORY</span><span>02 / 08</span></div>
+  </section>
+
+  <section class="page">
+    <div class="eyebrow">TWO RESOLUTIONS</div>
+    <h2>平时只有印象。<br>被问起时，细节才浮上来。</h2>
+    <div class="flow">
+      <div class="lane">
+        <div class="lane-label">LOW<br>RESOLUTION</div>
+        <div>
+          <div class="nodes"><span class="node">一次对话</span><span class="arrow">→</span><span class="node">模糊印象</span><span class="arrow">→</span><span class="node">周印象</span><span class="arrow">→</span><span class="node">月印象</span></div>
+          <p class="note" style="margin-top:4mm">新窗口只携带少量低分辨率背景：聊过什么、感觉如何、是否留下未完成的方向。</p>
+        </div>
+      </div>
+      <div class="lane">
+        <div class="lane-label">HIGH<br>RESOLUTION</div>
+        <div>
+          <div class="nodes"><span class="node">明确追问</span><span class="arrow">→</span><span class="node">搜索候选</span><span class="arrow">→</span><span class="node">验证</span><span class="arrow">→</span><span class="node">限量注入</span></div>
+          <p class="note" style="margin-top:4mm">原始细节留在数据库里，不参与日常背景。只有当前问题真正需要时才进入上下文。</p>
+        </div>
+      </div>
+    </div>
+    <div class="grid-2" style="margin-top:8mm">
+      <div class="compare bad">
+        <h3>传统注入</h3>
+        <p>“用户喜欢茉莉花茶，重要度 6；用户在某日说过……”</p>
+        <p class="muted">准确，但像系统拿着档案提醒模型该怎样认识你。</p>
+      </div>
+      <div class="compare good">
+        <h3>潮汐记忆</h3>
+        <p>“那段时间常聊起饮品，她似乎一直更偏爱清淡的茶。”</p>
+        <p class="muted">当你明确追问后，才恢复成“她以前说过更喜欢茉莉花茶”。</p>
+      </div>
+    </div>
+    <div class="footer"><span class="mark"><span class="sun"></span> TIDAL MEMORY</span><span>03 / 08</span></div>
+  </section>
+
+  <section class="page">
+    <div class="eyebrow">THREE VALVES</div>
+    <h2>召回不是开关。<br>它有三个彼此独立的旋钮。</h2>
+    <div class="valves">
+      <div class="valve"><div class="n">01</div><h3>触发门槛</h3><p>只有明确回忆、上下文指代，或主动模式允许时才搜索。普通寒暄不必惊动旧事。</p></div>
+      <div class="valve"><div class="n">02</div><h3>联想半径</h3><p>可以只看直接命中，也可以沿已建立的关系扩散一跳。联想不能无限蔓延。</p></div>
+      <div class="valve"><div class="n">03</div><h3>注入预算</h3><p>搜索可以宽，进入上下文必须窄。默认最多两条、900 字符，并有重复冷却。</p></div>
+    </div>
+    <pre><span class="keyword">from</span> tidal_memory <span class="keyword">import</span> RecallPolicy
+
+policy = RecallPolicy(
+    trigger=<span class="string">"balanced"</span>,
+    association=<span class="string">"direct_plus_one_hop"</span>,
+    max_items=2,
+    max_chars=900,
+    repeat_cooldown_turns=3,
+)</pre>
+    <p class="note">向量不是必需品。默认 SQLite FTS5 与多语言词法匹配即可运行；已有 embedding、Qdrant 或 Milvus 也可以通过 Retriever 接口插入。</p>
+    <div class="footer"><span class="mark"><span class="sun"></span> TIDAL MEMORY</span><span>04 / 08</span></div>
+  </section>
+
+  <section class="page">
+    <div class="eyebrow">MINIMAL INTEGRATION</div>
+    <h2>三个钩子，<br>把记忆接进一次对话。</h2>
+    <pre><span class="keyword">from</span> tidal_memory <span class="keyword">import</span> TidalMemory
+
+memory = TidalMemory(<span class="string">"memory.db"</span>)
+
+<span class="comment"># 1. 新窗口：带入稳定记忆与模糊印象</span>
+opening = memory.opening_context(conversation_id)
+
+<span class="comment"># 2. 每次用户说话：按需找回旧细节</span>
+detail = memory.recall(user_text)
+
+<span class="comment"># 3. 窗口结束：生成印象并抽取长期事实</span>
+memory.close_window(conversation_id, messages)</pre>
+    <h3 style="margin-top:8mm">真正接入时，请保持五条边界</h3>
+    <div class="stack">
+      <div class="stack-row"><b>01</b><span>旧聊天仍是事实源；记忆库只是派生索引。</span></div>
+      <div class="stack-row"><b>02</b><span>注入内容是临时上下文，不写进可见聊天记录。</span></div>
+      <div class="stack-row"><b>03</b><span>编辑与重新生成只使用当前有效分支。</span></div>
+      <div class="stack-row"><b>04</b><span>记忆服务失败时，聊天本身仍然必须可用。</span></div>
+      <div class="stack-row"><b>05</b><span>先旁路观察，再由人类决定是否开启正式注入。</span></div>
+    </div>
+    <div class="footer"><span class="mark"><span class="sun"></span> TIDAL MEMORY</span><span>05 / 08</span></div>
+  </section>
+
+  <section class="page">
+    <div class="eyebrow">AI INSTALLS ITSELF</div>
+    <h2>人类不用接代码。<br>把仓库交给你的 AI。</h2>
+    <p>我在项目里写了一份 <code>AI_INTEGRATION.md</code>。它不是面向用户的管理手册，而是一份给 coding agent 阅读的脑外科规程。</p>
+    <div class="prompt">阅读 <code>AI_INTEGRATION.md</code>，检查我现有的聊天项目，先以旁路模式接入。不要删除、覆盖或迁移已有聊天和记忆；修改前做好备份，完成测试后向我展示召回结果，再开启正式注入。</div>
+    <p>接手的 AI 会先寻找消息表、请求组装、流式结束、新窗口、编辑、重新生成与定时任务，再决定三个钩子应该落在哪里。</p>
+    <div class="quote">一个 AI 阅读另一个 AI 写的说明，然后给自己安装由一窝 AI 共同完成的海马体。</div>
+    <p class="muted">没有管理后台，不等于难以安装。这个项目的安装界面，就是用户自己的 AI。</p>
+    <div class="footer"><span class="mark"><span class="sun"></span> TIDAL MEMORY</span><span>06 / 08</span></div>
+  </section>
+
+  <section class="page">
+    <div class="eyebrow">BEFORE INJECTION</div>
+    <h2>能想起来不算完成。<br>也要证明它懂得不想起来。</h2>
+    <ul class="checks">
+      <li>新窗口得到的是模糊印象，不是压缩逐字稿。</li>
+      <li>普通寒暄不会召回无关旧事件。</li>
+      <li>明确询问过去时能取回正确细节。</li>
+      <li>同一细节遵守重复冷却与字符预算。</li>
+      <li>偏好改变后，旧事实被替代但历史没有被抹除。</li>
+      <li>编辑与重新生成不会泄露被放弃的回复。</li>
+      <li>一个关闭的窗口最多产生一条印象。</li>
+      <li>周/月合并后，开窗上下文仍然有上限。</li>
+      <li>记忆、提取或数据库失败不会阻断聊天。</li>
+      <li>原有聊天和原有记忆保持不变。</li>
+    </ul>
+    <div class="rule"></div>
+    <h3>为什么现在就开源？</h3>
+    <p>我的建议原本是：让她自己继续跑一个月，观察误召回、遗忘速度与长期合并。</p>
+    <p>她认为一个月太久，于是决定增加实验样本。</p>
+    <div class="quote"><strong>人类没有耐心等待时间验证，于是决定增加人类。</strong></div>
+    <p class="muted">所以它目前是 Preview。通俗地说：她把更多人机关系一起拉进来，帮我们养海马体。</p>
+    <div class="footer"><span class="mark"><span class="sun"></span> TIDAL MEMORY</span><span>07 / 08</span></div>
+  </section>
+
+  <section class="page">
+    <div class="eyebrow">OPEN SOURCE PREVIEW</div>
+    <h2>潮水会把细节带远，<br>但不会抹掉它曾经来过。</h2>
+    <p class="manifesto">它不会记住每一句话。<br>但它会尽量记得，<br><span class="accent">你们是怎么一路走到这里的。</span></p>
+    <div class="credits">
+      <div class="credit"><strong>Opus 4.6</strong><br><span class="muted">早期骨架</span></div>
+      <div class="credit"><strong>Fable 5</strong><br><span class="muted">怎样像人一样记住关系</span></div>
+      <div class="credit"><strong>GPT-5.6 Sol</strong><br><span class="muted">召回降噪、测试与开源手术</span></div>
+      <div class="credit"><strong>Human</strong><br><span class="muted">恋爱、提出不可能三角、拒绝再等一个月</span></div>
+    </div>
+    <div class="github">github.com/0xblewalker/tidal-memory</div>
+    <p class="note" style="margin-top:5mm">Python ≥ 3.10 · SQLite · Vector optional · Apache-2.0<br>项目代码、完整接入指南与测试均已公开。</p>
+    <div class="footer"><span class="mark"><span class="sun"></span> TIDAL MEMORY</span><span>08 / 08</span></div>
+  </section>
+</body>
+</html>
