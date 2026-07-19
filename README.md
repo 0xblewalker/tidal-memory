@@ -14,6 +14,8 @@ There is no memory dashboard. Memory should flow, not become homework.
   small, bounded opening block separate from both impressions and recall.
 - **Progressive forgetting:** window impressions become weekly impressions,
   then monthly impressions. Source rows are archived, not destroyed.
+- **Quiet ongoing threads:** low-drama but continuing life or project matters
+  survive the two-window ladder without becoming permanent facts.
 - **A three-valve recall policy:** trigger sensitivity, association radius, and
   injection budget are independent controls.
 - **Vector optional:** SQLite FTS5 plus multilingual lexical overlap works out
@@ -144,6 +146,23 @@ window messages and returns dictionaries accepted by remember:
         }]
 
     memory = TidalMemory("memory.db", fact_extractor=extract_facts)
+
+For continuing matters that are too temporary for durable memory, pass a
+thread extractor. Reuse a short stable key across windows; emit `done` when the
+matter is explicitly completed or cancelled:
+
+    def extract_threads(messages):
+        return [{
+            "key": "cat-sitting-job",
+            "label": "The after-work cat-sitting job is still ongoing",
+            "status": "active",  # or "done"
+        }]
+
+    memory = TidalMemory("memory.db", thread_extractor=extract_threads)
+
+At most four active labels from the latest twelve windows and fourteen days are
+added to the opening context. Newer state wins, expired items disappear, and
+the exact transcript is never injected through this path.
 
 ## Natural-language controls
 

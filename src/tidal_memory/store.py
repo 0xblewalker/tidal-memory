@@ -1,3 +1,4 @@
+import json
 import sqlite3
 from contextlib import contextmanager
 from datetime import datetime, timezone
@@ -127,13 +128,16 @@ class MemoryStore:
 
     def upsert_window_impression(
         self, conversation_id: str, impression: str, *, title: str = "Untitled",
-        occurred_at: Optional[str] = None,
+        occurred_at: Optional[str] = None, ongoing_threads: Optional[list[dict]] = None,
     ) -> int:
         row = self._db.execute(
             """SELECT id FROM memories WHERE event_type='window_impression'
                AND conversation_id=? ORDER BY id DESC LIMIT 1""", (conversation_id,),
         ).fetchone()
-        details = "title=" + title[:80]
+        details = json.dumps({
+            "title": title[:80],
+            "ongoing_threads": self._clean_ongoing_threads(ongoing_threads or []),
+        }, ensure_ascii=False, separators=(",", ":"))
         if row:
             self.update_text(row["id"], impression, details=details, occurred_at=occurred_at)
             return int(row["id"])
@@ -142,6 +146,57 @@ class MemoryStore:
             event_type="window_impression", layer="episodic", importance=4,
             tags="impression,window", conversation_id=conversation_id,
         )
+
+    @staticmethod
+    def _clean_ongoing_threads(items: list[dict]) -> list[dict]:
+        cleaned = []
+        for item in items[:6]:
+            if not isinstance(item, dict):
+                continue
+            key = str(item.get("key", "")).strip().lower()[:40]
+            label = str(item.get("label", "")).strip()[:60]
+            if key and label:
+                cleaned.append({
+                    "key": key,
+                    "label": label,
+                    "status": "done" if item.get("status") == "done" else "active",
+                })
+        return cleaned
+
+    @classmethod
+    def _threads_from_details(cls, details: str) -> list[dict]:
+        try:
+            value = json.loads(details or "{}")
+        except (TypeError, ValueError):
+            return []  # Legacy ``title=...`` details contain no thread slot.
+        return cls._clean_ongoing_threads(value.get("ongoing_threads", []))
+
+    def ongoing_threads(
+        self, current_conversation_id: str = "", *, days: int = 14,
+        scan_windows: int = 12, limit: int = 4,
+    ) -> list[str]:
+        cutoff = datetime.now(timezone.utc).timestamp() - days * 86400
+        windows = self.rows(
+            "archived=0 AND event_type='window_impression' AND coalesce(conversation_id,'')<>?",
+            (current_conversation_id,),
+        )[:scan_windows]
+        decided, active = set(), []
+        for window in windows:  # newest state wins
+            try:
+                seen_at = datetime.fromisoformat(window.occurred_at.replace("Z", "+00:00")).timestamp()
+            except ValueError:
+                continue
+            if seen_at < cutoff:
+                continue
+            for item in self._threads_from_details(window.details):
+                if item["key"] in decided:
+                    continue
+                decided.add(item["key"])
+                if item["status"] == "active":
+                    active.append(item["label"])
+                if len(active) >= limit:
+                    return active
+        return active
 
     def update_text(
         self, memory_id: int, summary: str, *, details: Optional[str] = None,
@@ -230,6 +285,9 @@ class MemoryStore:
         weekly = self.rows("archived=0 AND event_type='rollup_week'")[:1]
         monthly = self.rows("archived=0 AND event_type='rollup_month'")[:1]
         lines = [f"- Recent window: {item.summary}" for item in windows]
+        threads = self.ongoing_threads(current_conversation_id)
+        if threads:
+            lines.append("- Ongoing: " + "; ".join(threads))
         lines += [f"- Recent week: {item.summary}" for item in weekly]
         lines += [f"- Older month: {item.summary}" for item in monthly]
         output = ""

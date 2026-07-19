@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Add optional ongoing-thread extraction for quiet, continuing life and project matters.
+- Keep up to four active thread labels across a bounded fourteen-day window horizon.
+- Let a newer `done` state suppress an older active thread without creating permanent memory.
+- Store thread metadata inside window-impression details with no schema migration.
+
 ## 0.1.0 - Trial preview
 
 - SQLite memory store with separate occurrence and recording times.

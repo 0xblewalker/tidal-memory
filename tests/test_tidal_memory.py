@@ -122,6 +122,32 @@ class TidalMemoryTest(unittest.TestCase):
         self.assertLessEqual(len(context), 250)
         self.assertEqual(context.count("Recent window"), 1)
 
+    def test_quiet_ongoing_thread_survives_two_window_ladder(self):
+        self.memory.store.upsert_window_impression(
+            "w1", "They briefly mentioned an ordinary errand.",
+            ongoing_threads=[{
+                "key": "cat-sitting-job", "label": "The after-work cat-sitting job continues",
+                "status": "active",
+            }],
+        )
+        self.memory.store.upsert_window_impression("w2", "They discussed breakfast.")
+        self.memory.store.upsert_window_impression("w3", "They fixed a small bug.")
+        context = self.memory.opening_context("w4")
+        self.assertNotIn("ordinary errand", context)
+        self.assertIn("Ongoing: The after-work cat-sitting job continues", context)
+
+    def test_done_thread_suppresses_older_active_state(self):
+        thread = {
+            "key": "small-bug", "label": "A small rendering bug remains", "status": "active",
+        }
+        self.memory.store.upsert_window_impression("w1", "They worked on the interface.",
+                                                   ongoing_threads=[thread])
+        self.memory.store.upsert_window_impression(
+            "w2", "They finished the interface fix.",
+            ongoing_threads=[{**thread, "status": "done"}],
+        )
+        self.assertNotIn("A small rendering bug remains", self.memory.opening_context("w3"))
+
 
 if __name__ == "__main__":
     unittest.main()

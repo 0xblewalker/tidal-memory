@@ -10,6 +10,7 @@ from .store import MemoryStore, utcnow
 
 ImpressionWriter = Callable[[list[dict]], str]
 FactExtractor = Callable[[list[dict]], list[dict]]
+ThreadExtractor = Callable[[list[dict]], list[dict]]
 RelevanceVerifier = Callable[[str, list[RetrievalHit]], list[RetrievalHit]]
 
 
@@ -49,6 +50,7 @@ class TidalMemory:
         retriever: Optional[Retriever] = None,
         impression_writer: Optional[ImpressionWriter] = None,
         fact_extractor: Optional[FactExtractor] = None,
+        thread_extractor: Optional[ThreadExtractor] = None,
         relevance_verifier: Optional[RelevanceVerifier] = None,
     ):
         self.store = MemoryStore(path)
@@ -56,6 +58,7 @@ class TidalMemory:
         self.retriever = retriever or KeywordRetriever(self.store)
         self.impression_writer = impression_writer or quiet_impression
         self.fact_extractor = fact_extractor
+        self.thread_extractor = thread_extractor
         self.relevance_verifier = relevance_verifier
         self.turn = 0
         self._last_injected: dict[int, int] = {}
@@ -95,8 +98,10 @@ class TidalMemory:
                 }
                 self.remember(fact["summary"], **allowed)
         impression = self.impression_writer(messages)
+        ongoing_threads = self.thread_extractor(messages) if self.thread_extractor else []
         return self.store.upsert_window_impression(
             conversation_id, impression, title=title, occurred_at=occurred_at,
+            ongoing_threads=ongoing_threads,
         )
 
     def opening_context(self, conversation_id: str = "") -> str:
